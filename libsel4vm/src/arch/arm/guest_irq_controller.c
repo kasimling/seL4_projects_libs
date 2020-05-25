@@ -13,12 +13,5 @@ int vm_create_default_irq_controller(vm_t *vm, struct vm_irq_controller_params *
         return -1;
     }
 
-    switch (params->version) {
-        case VM_GIC_V2:
-            return vm_install_vgic_v2(vm, params);
-        case VM_GIC_V3:
-            ZF_LOGE("Gic v3 not implemented yet");
-            /* return vm_install_vgic_v3(vm, params); */
-    }
-    return -1;
+    return vm_install_vgic(vm, params);
 }
