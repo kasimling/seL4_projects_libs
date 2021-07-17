@@ -81,12 +81,33 @@ int vm_install_vgic_v3(vm_t *vm, struct vm_irq_controller_params *params)
     vgic->rdist_paddr = params->gic_rdist_paddr;
     vgic->rdist_sgi_ppi_paddr = params->gic_rdist_sgi_ppi_paddr;
 
-    if (       !vm_reserve_memory_at(vm, params->gic_dist_paddr, params->gic_dist_size, handle_vgic_dist_fault, NULL)
-            || !vm_reserve_memory_at(vm, params->gic_rdist_paddr, params->gic_rdist_size, handle_vgic_rdist_fault, NULL)
-            || !vm_reserve_memory_at(vm, params->gic_rdist_sgi_ppi_paddr, params->gic_rdist_sgi_ppi_size, handle_vgic_rdist_sgi_ppi_fault, NULL)) {
-        ZF_LOGE("Error installing vgic");
-        free(vgic);
-        return -1;
+    if (!vm_reserve_memory_at(vm, params->gic_dist_paddr, params->gic_dist_size, handle_vgic_dist_fault, NULL)) {
+	ZF_LOGE("Error installing vgic");
+	free(vgic);
+	return -1;
+    }
+
+    if (params->gic_rdist_paddr + params->gic_rdist_size <= params->gic_rdist_sgi_ppi_paddr) {
+        if (   !vm_reserve_memory_at(vm, params->gic_rdist_paddr, params->gic_rdist_size, handle_vgic_rdist_fault, NULL)
+	    || !vm_reserve_memory_at(vm, params->gic_rdist_sgi_ppi_paddr, params->gic_rdist_sgi_ppi_size, handle_vgic_rdist_sgi_ppi_fault, NULL)) {
+            ZF_LOGE("Error installing vgic");
+            free(vgic);
+            return -1;
+	}
+    } else {
+	/* overlapped */
+	uintptr_t rdist_addr1 = params->gic_rdist_paddr;
+	size_t rdist_size1 = params->gic_rdist_sgi_ppi_paddr - params->gic_rdist_paddr;
+	uintptr_t rdist_addr2 = params->gic_rdist_sgi_ppi_paddr + params->gic_rdist_sgi_ppi_size;
+	size_t rdist_size2 = params->gic_rdist_paddr + params->gic_rdist_size - rdist_addr2;
+
+	if (   !vm_reserve_memory_at(vm, rdist_addr1, rdist_size1, handle_vgic_rdist_fault, NULL)
+            || !vm_reserve_memory_at(vm, params->gic_rdist_sgi_ppi_paddr, params->gic_rdist_sgi_ppi_size, handle_vgic_rdist_sgi_ppi_fault, NULL)
+	    || !vm_reserve_memory_at(vm, rdist_addr2, rdist_size2, handle_vgic_rdist_fault, NULL)) {
+            ZF_LOGE("Error installing vgic");
+            free(vgic);
+            return -1;
+	}
     }
 
     vgic_dist_v3_reset(&vgic->distributor);

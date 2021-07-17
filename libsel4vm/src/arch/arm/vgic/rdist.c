@@ -154,9 +154,11 @@ memory_fault_result_t handle_vgic_rdist_fault(vm_t *vm,
     unsigned int offset;
     uint32_t *reg;
 
-    offset = fault_get_address(fault) - vgic->dist_paddr;
+    offset = fault_get_address(fault) - vgic->rdist_paddr;
     action = vgic_rdist_get_action(gic_rdist, offset);
     reg = (void*)((void*)gic_rdist + (offset - offset % 4));
+
+    //printf("handle_vgic_rdist_fault: fault->addr=0x%08x fault_addr=%p vgic->rdist_paddr=0x%08x offset=0x%x gic_rdist=%p reg=%p\n", fault->addr, fault_addr, vgic->rdist_paddr, offset, (void *)gic_rdist, reg);
 
     /* Read fault */
     if (fault_is_read(fault)) {
@@ -188,7 +190,7 @@ memory_fault_result_t handle_vgic_rdist_sgi_ppi_fault(vm_t *vm,
     unsigned int offset;
     uint32_t *reg, mask;
 
-    offset = fault_get_address(fault) - vgic->dist_paddr;
+    offset = fault_get_address(fault) - vgic->rdist_sgi_ppi_paddr;
     action = vgic_sgi_get_action(gic_rdist, offset);
     reg = (void*)((void*)gic_rdist + (offset - offset % 4));
     mask = fault_get_data_mask(fault);
