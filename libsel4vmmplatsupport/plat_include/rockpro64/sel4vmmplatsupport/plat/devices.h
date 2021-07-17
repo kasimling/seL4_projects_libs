@@ -20,7 +20,7 @@
 #define GIC_DIST_SIZE           0x10000
 
 #define GIC_REDIST_PADDR        0xfef00000
-#define GIC_REDIST_SIZE         0x10000
+#define GIC_REDIST_SIZE         0xC0000
 
 #define GIC_REDIST_SGI_PADDR    (GIC_REDIST_PADDR + 0x00010000)
 #define GIC_REDIST_SGI_SIZE     0x10000
